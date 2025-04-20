@@ -12,13 +12,13 @@ func InitializeRoutes(router *gin.Engine) {
 	routes := router.Group(BASE_PATH)
 	{
 		//endpoints de eventos
-		routes.POST("/events", handler.CreateEventsOpeningHandler)
-		routes.GET("/events", handler.ListAllEventsOpeningHandler)
+		routes.POST("/events", handler.CreateEventsHandler)
+		routes.GET("/events", handler.ListAllEventsHandler)
 
 		//endpoints de ingressos
-		router.POST("/events/:id/buy", handler.BuyTicketsOpeningHandler)
-		router.GET("/tickets/:event_name", handler.ListAllTicketsForEventsOpeningHandler)
-		router.GET("/tickets/findAll", handler.ListAllTicketsOpeningHanlder)
+		router.POST("/events/:id/buy", handler.BuyTicketsHandler)
+		router.GET("/tickets/:event_name", handler.ListAllTicketsForEventsHandler)
+		router.GET("/tickets/findAll", handler.ListAllTicketsHanlder)
 
 	}
 }
