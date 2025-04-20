@@ -1,15 +1,3 @@
-DO $$
-BEGIN
-   IF NOT EXISTS (
-      SELECT FROM pg_database
-      WHERE datname = 'ingressos_db'
-   ) THEN
-      CREATE DATABASE ingressos_db;
-   END IF;
-END $$;
-
-\connect ingressos_db;
-
 CREATE TABLE IF NOT EXISTS show (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
