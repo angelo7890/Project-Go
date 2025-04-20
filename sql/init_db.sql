@@ -1,0 +1,38 @@
+DO $$
+BEGIN
+   IF NOT EXISTS (
+      SELECT FROM pg_database
+      WHERE datname = 'ingressos_db'
+   ) THEN
+      CREATE DATABASE ingressos_db;
+   END IF;
+END $$;
+
+\connect ingressos_db;
+
+CREATE TABLE IF NOT EXISTS show (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    data TIMESTAMP NOT NULL,
+    local VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS setor (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    capacidade INT NOT NULL,
+    show_id INT REFERENCES show(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS usuario (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS venda_ingresso (
+    id SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id) ON DELETE CASCADE,
+    setor_id INT REFERENCES setor(id) ON DELETE CASCADE,
+    data_venda TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
