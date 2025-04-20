@@ -1,55 +1,31 @@
 package dto
 
 import (
-	"errors"
 	"time"
 )
 
 type EventCreateDTO struct {
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	StartTime        time.Time `json:"start_time"`
-	EndTime          time.Time `json:"end_time"`
-	Location         string    `json:"location"`
-	AvailableTickets int       `json:"available_tickets"`
-	TicketPrice      float64   `json:"ticket_price"`
+	Name     string    `json:"name"`
+	Date     time.Time `json:"date"`
+	Location string    `json:"location"`
 }
 
 func (r *EventCreateDTO) Validate() error {
 	if r.Name == "" {
-		return errors.New("nome do evento é obrigatório")
+		return ErrParamIsRequired("name", "string")
 	}
-	if r.Description == "" {
-		return errors.New("descrição do evento é obrigatória")
-	}
-	if r.StartTime.IsZero() {
-		return errors.New("data de início é obrigatória")
-	}
-	if r.EndTime.IsZero() {
-		return errors.New("data de fim é obrigatória")
+	if r.Date.IsZero() {
+		return ErrParamIsRequired("date", "date")
 	}
 	if r.Location == "" {
-		return errors.New("localização do evento é obrigatória")
-	}
-	if r.AvailableTickets <= 0 {
-		return errors.New("número de ingressos deve ser maior que zero")
-	}
-	if r.TicketPrice <= 0 {
-		return errors.New("o valor do ingresso nao pode ser negativo")
-	}
-	if r.EndTime.Before(r.StartTime) {
-		return errors.New("data de fim não pode ser antes da data de início")
+		return ErrParamIsRequired("location", "string")
 	}
 	return nil
 }
 
 type EventResponseDTO struct {
-	ID               int       `json:"id"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	StartTime        time.Time `json:"start_time"`
-	EndTime          time.Time `json:"end_time"`
-	Location         string    `json:"location"`
-	AvailableTickets int       `json:"available_tickets"`
-	TicketPrice      float64   `json:"ticket_price"`
+	Id       int       `json:"id"`
+	Name     string    `json:"name"`
+	Date     time.Time `json:"date"`
+	Location string    `json:"location"`
 }
