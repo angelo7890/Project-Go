@@ -1,8 +1,6 @@
 package router
 
 import (
-	"ingressos-api/handler"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,14 +9,25 @@ func InitializeRoutes(router *gin.Engine) {
 
 	routes := router.Group(BASE_PATH)
 	{
-		//endpoints de eventos
-		routes.POST("/events", handler.CreateEventsHandler)
-		routes.GET("/events", handler.ListAllEventsHandler)
+		//eventos
+		routes.POST("/events")
+		routes.GET("/events")
+		routes.GET("/events/{id}")
 
-		//endpoints de ingressos
-		router.POST("/events/:id/buy", handler.BuyTicketsHandler)
-		router.GET("/tickets/:event_name", handler.ListAllTicketsForEventsHandler)
-		router.GET("/tickets/findAll", handler.ListAllTicketsHanlder)
+		//setor
+		routes.GET("/events/{id}")
+		routes.GET("/events/{id}")
+		routes.GET("/events/{id}")
+
+		//user
+		routes.GET("/events/{id}")
+		routes.GET("/events/{id}")
+		routes.GET("/events/{id}")
+
+		//ingressos
+		router.POST("/sales")
+		router.GET("/tickets/:event_name")
+		router.GET("/tickets/findAll")
 
 	}
 }

@@ -19,7 +19,7 @@ func (r *SectorCreateDTO) Validade() error {
 	return nil
 }
 
-type ReponseSectorDto struct {
+type ReponseSectorDTO struct {
 	Id       int    `json:"id"`
 	Name     string `json:"name"`
 	Capacity int    `json:"capacity"`
