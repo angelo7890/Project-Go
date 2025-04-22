@@ -6,6 +6,7 @@ import (
 	"ingressos-api/repository"
 	responses "ingressos-api/responses"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -16,14 +17,13 @@ func CreateUserHandler(context *gin.Context) {
 	db := database.GetDB()
 
 	if err := context.ShouldBindJSON(&request); err != nil {
-		logger.Errorf("bind error: %v", err.Error())
+
 		responses.SendError(context, http.StatusBadRequest, "Dados inválidos.")
 		return
 	}
 
-	// Validação do DTO
 	if err := request.Validate(); err != nil {
-		logger.Errorf("validation error: %v", err.Error())
+
 		responses.SendError(context, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -33,11 +33,8 @@ func CreateUserHandler(context *gin.Context) {
 		Email: request.Email,
 	}
 
-	// Salvar no banco
 	if err := repository.CreateUserRepository(db, &user); err != nil {
-		logger.Errorf("error creating user: %v", err.Error())
 
-		// Tratar erro de email duplicado
 		if strings.Contains(err.Error(), "duplicate key") {
 			responses.SendError(context, http.StatusConflict, "Email já cadastrado.")
 		} else {
@@ -46,14 +43,34 @@ func CreateUserHandler(context *gin.Context) {
 		return
 	}
 
-	logger.Infof("usuário criado com sucesso: %v", user.Email)
 	responses.SendSuccess(context, "create-user", user)
 }
 
-func GetAllUsersHandler() {
+func GetAllUsersHandler(context *gin.Context) {
+	bd := database.GetDB()
+
+	users, error := repository.GetAllUsersRepository(bd)
+	if error != nil {
+		responses.SendError(context, http.StatusInternalServerError, "erro ao buscar usuarios")
+		return
+	}
+	responses.SendSuccess(context, "Get all users", users)
 
 }
 
-func GetUserByIdHandler() {
+func GetUserByIdHandler(context *gin.Context) {
+	idParam := context.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "id invalido")
+		return
+	}
+	bd := database.GetDB()
 
+	user, error := repository.GetUserByID(bd, id)
+	if error != nil {
+		responses.SendError(context, http.StatusBadRequest, "erro ao buscar usuario")
+		return
+	}
+	responses.SendSuccess(context, "get user by id", user)
 }

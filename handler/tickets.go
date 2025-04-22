@@ -17,7 +17,6 @@ func BuyTicketsHandler(context *gin.Context) {
 		return
 	}
 
-	// Validação dos dados
 	if err := request.Validade(); err != nil {
 		responses.SendError(context, http.StatusBadRequest, err.Error())
 		return
