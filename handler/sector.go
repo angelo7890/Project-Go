@@ -1,13 +1,73 @@
 package handler
 
-func CreateSectorHandler() {
+import (
+	"ingressos-api/database"
+	"ingressos-api/dto"
+	"ingressos-api/repository"
+	responses "ingressos-api/responses"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+func CreateSectorHandler(context *gin.Context) {
+
+	db := database.GetDB()
+	request := dto.SectorCreateDTO{}
+
+	if err := context.ShouldBindJSON(&request); err != nil {
+
+		responses.SendError(context, http.StatusBadRequest, "Dados inválidos.")
+		return
+	}
+	if err := request.Validade(); err != nil {
+		responses.SendError(context, http.StatusBadRequest, "campos invalidos")
+		return
+	}
+	Sector := dto.SectorCreateDTO{
+		Name:     request.Name,
+		Capacity: request.Capacity,
+		ShowID:   request.ShowID,
+	}
+	if err := repository.CreateSector(db, Sector); err != nil {
+		responses.SendError(context, http.StatusInternalServerError, "nao foi possivel criar o setor")
+		return
+	}
+	responses.SendSuccess(context, "create-sector", Sector)
 
 }
 
-func DeleteSectorHandler() {
-
+func DeleteSectorHandler(context *gin.Context) {
+	idParam := context.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "id invalido")
+		return
+	}
+	db := database.GetDB()
+	if err := repository.DeleteSector(db, id); err != nil {
+		responses.SendError(context, http.StatusInternalServerError, "nao foi possivel deletar usuario")
+		return
+	}
+	responses.SendSuccess(context, "delete-user", nil)
 }
 
-func GetSectorByEventIdHandler() {
+func GetSectorByEventIdHandler(context *gin.Context) {
+	idParam := context.Param("id")
+	idEvent, err := strconv.Atoi(idParam)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "id invalido")
+		return
+	}
+	db := database.GetDB()
+
+	sectors, err := repository.GetSectorsByEventID(db, idEvent)
+
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "erro ao buscar setores do evento")
+		return
+	}
+	responses.SendSuccess(context, "get-sectors-by-event-id", sectors)
 
 }

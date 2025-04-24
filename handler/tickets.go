@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"ingressos-api/database"
 	"ingressos-api/dto"
 	"ingressos-api/repository"
 	responses "ingressos-api/responses"
@@ -13,36 +14,31 @@ import (
 func BuyTicketsHandler(context *gin.Context) {
 	var request dto.BuyTicketRequestDTO
 	if err := context.ShouldBindJSON(&request); err != nil {
-		responses.SendError(context, http.StatusBadRequest, fmt.Sprintf("Erro ao processar os dados: %v", err))
+		responses.SendError(context, http.StatusBadRequest, fmt.Sprintf("Dados inválidos: %v", err))
 		return
 	}
 
-	if err := request.Validade(); err != nil {
-		responses.SendError(context, http.StatusBadRequest, err.Error())
-		return
-	}
+	db := database.GetDB()
 
-	// Abrir a transação
-	tx, err := db.Begin()
+	transaction, err := db.Begin()
 	if err != nil {
-		responses.SendError(context, http.StatusInternalServerError, fmt.Sprintf("Erro ao iniciar transação: %v", err))
+		responses.SendError(context, http.StatusInternalServerError, "Erro ao iniciar transação")
 		return
 	}
-	defer tx.Rollback() // Se houver erro, faz o rollback
+	defer transaction.Rollback()
 
-	// Chama a função de compra de ingresso
-	ticket, err := repository.BuyTicket(tx, request, db)
+	ticket, err := repository.BuyTicket(transaction, request)
 	if err != nil {
-		responses.SendError(context, http.StatusInternalServerError, fmt.Sprintf("Erro ao comprar ingresso: %v", err))
+		responses.SendError(context, http.StatusBadRequest, fmt.Sprintf("Erro ao comprar ingresso: %v", err))
 		return
 	}
 
-	// Confirma a transação
-	if err := tx.Commit(); err != nil {
-		responses.SendError(context, http.StatusInternalServerError, fmt.Sprintf("Erro ao confirmar a transação: %v", err))
+	if err := transaction.Commit(); err != nil {
+		responses.SendError(context, http.StatusInternalServerError, fmt.Sprintf("Erro ao confirmar transação: %v", err))
 		return
 	}
-	responses.SendSuccess(context, "Compra de ingresso", ticket)
+
+	responses.SendSuccess(context, "Ingresso comprado com sucesso", ticket)
 }
 
 func GetAllTicketsSoldHandler(context *gin.Context) {

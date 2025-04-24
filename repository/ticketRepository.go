@@ -6,48 +6,43 @@ import (
 	"ingressos-api/dto"
 )
 
-func BuyTicket(tx *sql.Tx, request dto.BuyTicketRequestDTO, db *sql.DB) (*dto.ResponseBuyTicketDTO, error) {
-	// Bloquear o setor para garantir que ninguém mais altere enquanto verificamos a disponibilidade
-	var setorId int
-	var capacidade int
-	err := tx.QueryRow("SELECT id, capacidade FROM setores WHERE id = $1 FOR UPDATE", request.SectorId).Scan(&setorId, &capacidade)
+func BuyTicket(transaction *sql.Tx, request dto.BuyTicketRequestDTO) (*dto.ResponseBuyTicketDTO, error) {
+	// Bloqueia o setor durante a transação
+	var capacidade, ingressosVendidos int
+	err := transaction.QueryRow("SELECT capacidade FROM setores WHERE id = $1 FOR UPDATE", request.SectorId).Scan(&capacidade)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, err
-		}
-		return nil, err
+		return nil, fmt.Errorf("setor não encontrado: %v", err)
 	}
 
-	// Verificar se há ingressos disponíveis no setor
-	var ingressosDisponiveis int
-	err = tx.QueryRow("SELECT COUNT(*) FROM ingressos WHERE setor_id = $1 AND status = 'disponível'", setorId).Scan(&ingressosDisponiveis)
+	// Verifica quantos ingressos já foram vendidos
+	err = transaction.QueryRow("SELECT COUNT(*) FROM ingressos WHERE setor_id = $1 AND status = 'vendido'", request.SectorId).Scan(&ingressosVendidos)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("erro ao verificar ingressos vendidos: %v", err)
 	}
 
-	if ingressosDisponiveis <= 0 {
-		return nil, err
+	if ingressosVendidos >= capacidade {
+		return nil, fmt.Errorf("ingressos esgotados para este setor")
 	}
 
-	// Marcar o ingresso como vendido
+	// Insere o ingresso como vendido
 	var ingressoId int
-	err = tx.QueryRow("UPDATE ingressos SET status = 'vendido' WHERE setor_id = $1 AND status = 'disponível' RETURNING id", setorId).Scan(&ingressoId)
+	err = transaction.QueryRow("INSERT INTO ingressos (setor_id, status) VALUES ($1, 'vendido') RETURNING id", request.SectorId).Scan(&ingressoId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("erro ao registrar ingresso: %v", err)
 	}
 
-	// Registrar a venda
+	// Registra a venda
 	var vendaId int
-	err = tx.QueryRow("INSERT INTO vendas (usuario_id, ingresso_id) VALUES ($1, $2) RETURNING id", request.UserId, ingressoId).Scan(&vendaId)
+	err = transaction.QueryRow("INSERT INTO vendas (usuario_id, ingresso_id) VALUES ($1, $2) RETURNING id", request.UserId, ingressoId).Scan(&vendaId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("erro ao registrar venda: %v", err)
 	}
 
-	// Recuperar event_id do ingresso
+	// Busca o evento do setor
 	var eventId int
-	err = tx.QueryRow("SELECT evento_id FROM setores WHERE id = $1", request.SectorId).Scan(&eventId)
+	err = transaction.QueryRow("SELECT show_id FROM setores WHERE id = $1", request.SectorId).Scan(&eventId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("erro ao buscar evento: %v", err)
 	}
 
 	ticket := &dto.ResponseBuyTicketDTO{

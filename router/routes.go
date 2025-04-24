@@ -12,14 +12,14 @@ func InitializeRoutes(router *gin.Engine) {
 	routes := router.Group(BASE_PATH)
 	{
 		//eventos
-		routes.POST("/events")
-		routes.GET("/events")
-		routes.GET("/events/:id")
+		routes.POST("/events", handler.CreateEventsHandler)
+		routes.GET("/events", handler.GetAllEventsHandler)
+		routes.GET("/events/:id", handler.GetEventForIdHandler)
 
 		//setor
-		//routes.GET("/events/{id}")
-		//routes.GET("/events/{id}")
-		//routes.GET("/events/{id}")
+		routes.POST("/sector", handler.CreateSectorHandler)
+		routes.GET("/sector/:id", handler.GetSectorByEventIdHandler)
+		routes.DELETE("/sector/:id", handler.DeleteSectorHandler)
 
 		//user
 		routes.POST("/user", handler.CreateUserHandler)
@@ -27,7 +27,7 @@ func InitializeRoutes(router *gin.Engine) {
 		routes.GET("/user/:id", handler.GetUserByIdHandler)
 
 		//ingressos
-		//router.POST("/sales")
+		router.POST("/ticket", handler.BuyTicketsHandler)
 		//router.GET("/tickets/:event_name")
 		//router.GET("/tickets/findAll")
 
