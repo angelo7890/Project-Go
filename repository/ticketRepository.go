@@ -6,51 +6,44 @@ import (
 	"ingressos-api/dto"
 )
 
-func BuyTicket(transaction *sql.Tx, request dto.BuyTicketRequestDTO) (*dto.ResponseBuyTicketDTO, error) {
-	// Bloqueia o setor durante a transação
-	var capacidade, ingressosVendidos int
-	err := transaction.QueryRow("SELECT capacidade FROM setores WHERE id = $1 FOR UPDATE", request.SectorId).Scan(&capacidade)
+func BuyTicket(tx *sql.Tx, request dto.BuyTicketRequestDTO) (*dto.ResponseBuyTicketDTO, error) {
+	var capacidade, totalVendas int
+
+	err := tx.QueryRow("SELECT capacidade FROM setor WHERE id = $1 FOR UPDATE", request.SectorId).Scan(&capacidade)
 	if err != nil {
-		return nil, fmt.Errorf("setor não encontrado: %v", err)
+		return nil, fmt.Errorf("erro ao buscar capacidade: %w", err)
 	}
 
-	// Verifica quantos ingressos já foram vendidos
-	err = transaction.QueryRow("SELECT COUNT(*) FROM ingressos WHERE setor_id = $1 AND status = 'vendido'", request.SectorId).Scan(&ingressosVendidos)
+	err = tx.QueryRow("SELECT COUNT(*) FROM venda_ingresso WHERE setor_id = $1", request.SectorId).Scan(&totalVendas)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao verificar ingressos vendidos: %v", err)
+		return nil, fmt.Errorf("erro ao contar vendas: %w", err)
 	}
 
-	if ingressosVendidos >= capacidade {
-		return nil, fmt.Errorf("ingressos esgotados para este setor")
+	if totalVendas >= capacidade {
+		return nil, fmt.Errorf("setor esgotado")
 	}
 
-	// Insere o ingresso como vendido
-	var ingressoId int
-	err = transaction.QueryRow("INSERT INTO ingressos (setor_id, status) VALUES ($1, 'vendido') RETURNING id", request.SectorId).Scan(&ingressoId)
+	var saleID int
+	err = tx.QueryRow(
+		"INSERT INTO venda_ingresso (usuario_id, setor_id) VALUES ($1, $2) RETURNING id",
+		request.UserId, request.SectorId,
+	).Scan(&saleID)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao registrar ingresso: %v", err)
+		return nil, fmt.Errorf("erro ao inserir venda: %w", err)
 	}
 
-	// Registra a venda
-	var vendaId int
-	err = transaction.QueryRow("INSERT INTO vendas (usuario_id, ingresso_id) VALUES ($1, $2) RETURNING id", request.UserId, ingressoId).Scan(&vendaId)
+	var eventID int
+	err = tx.QueryRow("SELECT show_id FROM setor WHERE id = $1", request.SectorId).Scan(&eventID)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao registrar venda: %v", err)
-	}
-
-	// Busca o evento do setor
-	var eventId int
-	err = transaction.QueryRow("SELECT show_id FROM setores WHERE id = $1", request.SectorId).Scan(&eventId)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar evento: %v", err)
+		return nil, fmt.Errorf("erro ao buscar evento: %w", err)
 	}
 
 	ticket := &dto.ResponseBuyTicketDTO{
-		SaleId:   vendaId,
+		SaleId:   saleID,
 		UserId:   request.UserId,
-		TicketId: ingressoId,
+		TicketId: saleID,
 		SectorId: request.SectorId,
-		EventId:  eventId,
+		EventId:  eventID,
 	}
 
 	return ticket, nil
@@ -58,12 +51,11 @@ func BuyTicket(transaction *sql.Tx, request dto.BuyTicketRequestDTO) (*dto.Respo
 
 func GetAllTicketsSoldRepository(db *sql.DB) ([]dto.ResponseBuyTicketDTO, error) {
 	query := `
-		SELECT v.id, v.usuario_id, i.id, s.id, s.evento_id
-		FROM vendas v
-		JOIN ingressos i ON v.ingresso_id = i.id
-		JOIN setores s ON i.setor_id = s.id
+		SELECT v.id, v.usuario_id, i.id AS ticket_id, s.id AS sector_id, s.show_id AS event_id
+		FROM venda_ingresso v
+		JOIN ingresso i ON v.ingresso_id = i.id
+		JOIN setor s ON i.setor_id = s.id
 	`
-
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar ingressos vendidos: %w", err)
@@ -78,19 +70,20 @@ func GetAllTicketsSoldRepository(db *sql.DB) ([]dto.ResponseBuyTicketDTO, error)
 		}
 		tickets = append(tickets, t)
 	}
-
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar sobre as linhas: %w", err)
+	}
 	return tickets, nil
 }
 
 func GetAllTicketsSoldByEventIDRepository(db *sql.DB, eventID int) ([]dto.ResponseBuyTicketDTO, error) {
 	query := `
-		SELECT v.id, v.usuario_id, i.id, s.id, s.evento_id
-		FROM vendas v
-		JOIN ingressos i ON v.ingresso_id = i.id
-		JOIN setores s ON i.setor_id = s.id
-		WHERE s.evento_id = $1
+		SELECT v.id, v.usuario_id, i.id AS ticket_id, s.id AS sector_id, s.show_id AS event_id
+		FROM venda_ingresso v
+		JOIN ingresso i ON v.ingresso_id = i.id
+		JOIN setor s ON i.setor_id = s.id
+		WHERE s.show_id = $1
 	`
-
 	rows, err := db.Query(query, eventID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar ingressos vendidos para o evento: %w", err)
@@ -105,6 +98,8 @@ func GetAllTicketsSoldByEventIDRepository(db *sql.DB, eventID int) ([]dto.Respon
 		}
 		tickets = append(tickets, t)
 	}
-
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar sobre as linhas: %w", err)
+	}
 	return tickets, nil
 }

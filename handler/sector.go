@@ -18,11 +18,11 @@ func CreateSectorHandler(context *gin.Context) {
 
 	if err := context.ShouldBindJSON(&request); err != nil {
 
-		responses.SendError(context, http.StatusBadRequest, "Dados inválidos.")
+		responses.SendError(context, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := request.Validade(); err != nil {
-		responses.SendError(context, http.StatusBadRequest, "campos invalidos")
+		responses.SendError(context, http.StatusBadRequest, err.Error())
 		return
 	}
 	Sector := dto.SectorCreateDTO{
@@ -31,7 +31,7 @@ func CreateSectorHandler(context *gin.Context) {
 		ShowID:   request.ShowID,
 	}
 	if err := repository.CreateSector(db, Sector); err != nil {
-		responses.SendError(context, http.StatusInternalServerError, "nao foi possivel criar o setor")
+		responses.SendError(context, http.StatusInternalServerError, "nao foi possivel criar usuario")
 		return
 	}
 	responses.SendSuccess(context, "create-sector", Sector)

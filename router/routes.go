@@ -15,6 +15,7 @@ func InitializeRoutes(router *gin.Engine) {
 		routes.POST("/events", handler.CreateEventsHandler)
 		routes.GET("/events", handler.GetAllEventsHandler)
 		routes.GET("/events/:id", handler.GetEventForIdHandler)
+		//endpoint de delete
 
 		//setor
 		routes.POST("/sector", handler.CreateSectorHandler)
@@ -25,11 +26,12 @@ func InitializeRoutes(router *gin.Engine) {
 		routes.POST("/user", handler.CreateUserHandler)
 		routes.GET("/users", handler.GetAllUsersHandler)
 		routes.GET("/user/:id", handler.GetUserByIdHandler)
+		//endpoint de delete
 
 		//ingressos
 		router.POST("/ticket", handler.BuyTicketsHandler)
-		//router.GET("/tickets/:event_name")
-		//router.GET("/tickets/findAll")
+		router.GET("/tickets", handler.GetAllTicketsSoldHandler)
+		router.GET("/tickets/:id", handler.GetAllTicketsSoldForEventIdHandler)
 
 	}
 }

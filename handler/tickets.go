@@ -7,6 +7,7 @@ import (
 	"ingressos-api/repository"
 	responses "ingressos-api/responses"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +43,26 @@ func BuyTicketsHandler(context *gin.Context) {
 }
 
 func GetAllTicketsSoldHandler(context *gin.Context) {
+	db := database.GetDB()
+
+	tickets, err := repository.GetAllTicketsSoldRepository(db)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "nao foi possivel buscar ingressos")
+	}
+	responses.SendSuccess(context, "get-all-tickets-sold", tickets)
 }
 
 func GetAllTicketsSoldForEventIdHandler(context *gin.Context) {
+	idParam := context.Param("id")
+	idEvent, err := strconv.Atoi(idParam)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "id invalido")
+		return
+	}
+	db := database.GetDB()
+	tickets, err := repository.GetAllTicketsSoldByEventIDRepository(db, idEvent)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "nao foi possivel buscar ingressos")
+	}
+	responses.SendSuccess(context, "get-all-tickets-sold-by-event-id", tickets)
 }

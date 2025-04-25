@@ -1,7 +1,6 @@
 package main
 
 import (
-	"ingressos-api/configuration"
 	"ingressos-api/database"
 	"ingressos-api/router"
 	"log"
@@ -9,24 +8,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var (
-	logger *configuration.Logger
-)
-
 func main() {
-	logger = configuration.GetLogger("main")
-
-	error := godotenv.Load()
-	if error != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Erro ao carregar .env")
 	}
 
-	err := database.Initialize()
-	if err != nil {
-		logger.Errorf("Error ao inicar banco de dados: %v", err)
-		return
+	if err := database.Initialize(); err != nil {
+		log.Fatalf("Erro ao iniciar banco de dados: %v", err)
 	}
 
 	router.Initialize()
-
 }
