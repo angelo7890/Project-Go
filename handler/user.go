@@ -74,3 +74,18 @@ func GetUserByIdHandler(context *gin.Context) {
 	}
 	responses.SendSuccess(context, "get user by id", user)
 }
+
+func DeleteUserById(context *gin.Context) {
+	idParam := context.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, "id invalido")
+		return
+	}
+	db := database.GetDB()
+	if err := repository.DeleteUserById(db, id); err != nil {
+		responses.SendError(context, http.StatusBadRequest, "nao foi possivel deletar usuario")
+		return
+	}
+	responses.SendSuccess(context, "delete-user", nil)
+}

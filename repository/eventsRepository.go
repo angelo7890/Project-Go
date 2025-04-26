@@ -38,3 +38,8 @@ func GetEventByID(db *sql.DB, id int) (*dto.EventResponseDTO, error) {
 	}
 	return &e, nil
 }
+func DeleteEventById(db *sql.DB, id int) error {
+	query := "DELETE from show WHERE id = $1"
+	_, err := db.Exec(query, id)
+	return err
+}

@@ -49,3 +49,8 @@ func GetUserByID(db *sql.DB, id int) (*dto.ResponseUserDTO, error) {
 	}
 	return &user, nil
 }
+func DeleteUserById(db *sql.DB, id int) error {
+	query := "DELETE from usuario WHERE id = $1"
+	_, err := db.Exec(query, id)
+	return err
+}
