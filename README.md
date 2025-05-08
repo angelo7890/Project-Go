@@ -12,7 +12,7 @@ Seja bem-vindo à API de Ingressos! Este projeto foi desenvolvido como parte da 
 
 ## 📂 Estrutura do Projeto
 
-- `handler/` - Controladores que lidam com as requisições HTTP.
+- `handler/` - Controladores responsáveis por lidar com as requisições HTTP, implementando diretamente a lógica de negócios e interagindo com o banco de dados.
 - `repository/` - Manipulação direta dos dados no banco.
 - `dto/` - Objetos de Transferência de Dados (Data Transfer Objects).
 - `responses/` - Modelos de respostas padronizadas.
