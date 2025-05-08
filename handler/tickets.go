@@ -20,13 +20,17 @@ func BuyTicketsHandler(context *gin.Context) {
 	}
 
 	db := database.GetDB()
-
 	transaction, err := db.Begin()
 	if err != nil {
 		responses.SendError(context, http.StatusInternalServerError, "Erro ao iniciar transação")
 		return
 	}
-	defer transaction.Rollback()
+
+	defer func() {
+		if err != nil {
+			transaction.Rollback()
+		}
+	}()
 
 	ticket, err := repository.BuyTicket(transaction, request)
 	if err != nil {
@@ -34,7 +38,7 @@ func BuyTicketsHandler(context *gin.Context) {
 		return
 	}
 
-	if err := transaction.Commit(); err != nil {
+	if err = transaction.Commit(); err != nil {
 		responses.SendError(context, http.StatusInternalServerError, fmt.Sprintf("Erro ao confirmar transação: %v", err))
 		return
 	}

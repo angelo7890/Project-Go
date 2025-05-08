@@ -21,6 +21,7 @@ func InitializeRoutes(router *gin.Engine) {
 		routes.POST("/sector", handler.CreateSectorHandler)
 		routes.GET("/sector/:id", handler.GetSectorByEventIdHandler)
 		routes.DELETE("/sector/:id", handler.DeleteSectorHandler)
+		routes.PATCH("/updateSector", handler.UpdateTicketSectorHandler)
 
 		//user
 		routes.POST("/user", handler.CreateUserHandler)

@@ -51,10 +51,8 @@ func BuyTicket(tx *sql.Tx, request dto.BuyTicketRequestDTO) (*dto.ResponseBuyTic
 
 func GetAllTicketsSoldRepository(db *sql.DB) ([]dto.ResponseBuyTicketDTO, error) {
 	query := `
-		SELECT v.id, v.usuario_id, i.id AS ticket_id, s.id AS sector_id, s.show_id AS event_id
-		FROM venda_ingresso v
-		JOIN ingresso i ON v.ingresso_id = i.id
-		JOIN setor s ON i.setor_id = s.id
+		SELECT v.id AS sale_id, v.usuario_id AS user_id, v.id AS ticket_id, s.id AS sector_id,
+		 s.show_id AS event_id FROM venda_ingresso v JOIN setor s ON s.id = v.setor_id
 	`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -78,11 +76,9 @@ func GetAllTicketsSoldRepository(db *sql.DB) ([]dto.ResponseBuyTicketDTO, error)
 
 func GetAllTicketsSoldByEventIDRepository(db *sql.DB, eventID int) ([]dto.ResponseBuyTicketDTO, error) {
 	query := `
-		SELECT v.id, v.usuario_id, i.id AS ticket_id, s.id AS sector_id, s.show_id AS event_id
-		FROM venda_ingresso v
-		JOIN ingresso i ON v.ingresso_id = i.id
-		JOIN setor s ON i.setor_id = s.id
-		WHERE s.show_id = $1
+		SELECT vi.id AS sale_id, vi.usuario_id AS user_id, vi.id AS ticket_id,
+		s.id AS sector_id, s.show_id AS event_id FROM venda_ingresso vi 
+		JOIN setor s ON s.id = vi.setor_id WHERE s.show_id = $1
 	`
 	rows, err := db.Query(query, eventID)
 	if err != nil {

@@ -71,3 +71,45 @@ func GetSectorByEventIdHandler(context *gin.Context) {
 	responses.SendSuccess(context, "get-sectors-by-event-id", sectors)
 
 }
+func UpdateTicketSectorHandler(context *gin.Context) {
+
+	request := dto.UpdateSectorDTO{}
+	if err := context.ShouldBindJSON(&request); err != nil {
+
+		responses.SendError(context, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := request.Validade(); err != nil {
+		responses.SendError(context, http.StatusBadRequest, err.Error())
+		return
+	}
+	UpdateSector := dto.UpdateSectorDTO{
+		TicketId:    request.TicketId,
+		NewSectorId: request.NewSectorId,
+	}
+
+	db := database.GetDB()
+	transaction, err := db.Begin()
+	if err != nil {
+		responses.SendError(context, http.StatusInternalServerError, "Erro ao iniciar transação")
+		return
+	}
+	defer func() {
+		if err != nil {
+			transaction.Rollback()
+		}
+	}()
+
+	ticket, err := repository.UpdateTicketSector(transaction, UpdateSector.TicketId, UpdateSector.NewSectorId)
+	if err != nil {
+		responses.SendError(context, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := transaction.Commit(); err != nil {
+		responses.SendError(context, http.StatusInternalServerError, "Erro ao confirmar transação")
+		return
+	}
+
+	responses.SendSuccess(context, "Setor atualizado com sucesso", ticket)
+}

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"ingressos-api/dto"
 )
 
@@ -34,4 +35,39 @@ func GetSectorsByEventID(db *sql.DB, eventID int) ([]dto.ReponseSectorDTO, error
 		sectors = append(sectors, s)
 	}
 	return sectors, nil
+}
+
+func UpdateTicketSector(tx *sql.Tx, ticketID int, newSectorID int) (*dto.ResponseBuyTicketDTO, error) {
+	var capacidade, totalVendas int
+
+	err := tx.QueryRow("SELECT capacidade FROM setor WHERE id = $1 FOR UPDATE", newSectorID).Scan(&capacidade)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar capacidade do novo setor: %w", err)
+	}
+
+	err = tx.QueryRow("SELECT COUNT(*) FROM venda_ingresso WHERE setor_id = $1", newSectorID).Scan(&totalVendas)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao contar vendas no novo setor: %w", err)
+	}
+
+	if totalVendas >= capacidade {
+		return nil, fmt.Errorf("novo setor está esgotado")
+	}
+
+	_, err = tx.Exec("UPDATE venda_ingresso SET setor_id = $1 WHERE id = $2", newSectorID, ticketID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao atualizar setor do ingresso: %w", err)
+	}
+
+	var ticket dto.ResponseBuyTicketDTO
+	err = tx.QueryRow(`SELECT vi.id AS ticket_id, vi.usuario_id AS user_id, vi.setor_id AS sector_id, s.show_id AS event_id 
+		FROM venda_ingresso vi
+		JOIN setor s ON vi.setor_id = s.id
+		WHERE vi.id = $1`, ticketID).
+		Scan(&ticket.TicketId, &ticket.UserId, &ticket.SectorId, &ticket.EventId)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar ingresso atualizado: %w", err)
+	}
+
+	return &ticket, nil
 }

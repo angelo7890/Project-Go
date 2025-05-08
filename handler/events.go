@@ -70,14 +70,30 @@ func DeleteEventById(context *gin.Context) {
 	idParam := context.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		responses.SendError(context, http.StatusBadRequest, "id invalido")
+		responses.SendError(context, http.StatusBadRequest, "ID inválido")
 		return
 	}
-	db := database.GetDB()
 
-	if err := repository.DeleteEventById(db, id); err != nil {
-		responses.SendError(context, http.StatusBadRequest, "nao foi possivel deletar evento")
+	db := database.GetDB()
+	transaction, err := db.Begin()
+	if err != nil {
+		responses.SendError(context, http.StatusInternalServerError, "Erro ao iniciar transação")
 		return
 	}
+	defer func() {
+		if err != nil {
+			transaction.Rollback()
+		}
+	}()
+	if err = repository.DeleteEventById(transaction, id); err != nil {
+		responses.SendError(context, http.StatusBadRequest, "Não foi possível deletar o evento: "+err.Error())
+		return
+	}
+
+	if err = transaction.Commit(); err != nil {
+		responses.SendError(context, http.StatusInternalServerError, "Erro ao confirmar transação")
+		return
+	}
+
 	responses.SendSuccess(context, "delete-event", nil)
 }
