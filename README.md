@@ -1,6 +1,6 @@
 # API de Ingressos 🎟️
 
-Seja bem-vindo à API de Ingressos! Este projeto foi desenvolvido como parte da disciplina de Banco de Dados na faculdade, com o tema escolhido livremente pelo grupo. O foco principal é oferecer uma API robusta para gerenciamento de eventos, setores e ingressos, com controle total sobre as transações no banco de dados, sem o uso de ORM.
+Seja bem-vindo à API de Ingressos! Este projeto foi desenvolvido como parte da disciplina de Banco de Dados na faculdade, e o tema escolhido foi o gerenciamento da venda de ingressos para um show, com diferentes setores e toda a estrutura de vendas. O foco principal do trabalho foi implementar uma solução com código personalizado, que incluísse a manipulação de transações no banco de dados sem o uso de ORM, garantindo a integridade e o controle total das transações diretamente no banco.
 
 ## 🚀 Funcionalidades
 
